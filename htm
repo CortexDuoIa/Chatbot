@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demonstração - Assistente Virtual</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        #chat-container::-webkit-scrollbar {
+            width: 6px;
+        }
+        #chat-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        #chat-container::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 3px;
+        }
+        .option-button {
+            transition: all 0.2s ease-in-out;
+        }
+        .option-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center h-screen">
+
+    <div class="w-full max-w-md h-full sm:h-[90vh] sm:max-h-[700px] flex flex-col bg-white shadow-2xl rounded-lg overflow-hidden">
+        <!-- Header -->
+        <header class="bg-blue-600 text-white p-4 flex items-center shadow-md z-10">
+            <img src="https://placehold.co/40x40/FFFFFF/3B82F6?text=S" alt="Logo" class="w-10 h-10 rounded-full mr-3 border-2 border-white">
+            <div>
+                <h1 class="text-lg font-bold">Soluções Impulso</h1>
+                <p class="text-sm opacity-90">Assistente Virtual</p>
+            </div>
+        </header>
+
+        <!-- Chat Messages -->
+        <main id="chat-container" class="flex-1 p-6 overflow-y-auto bg-gray-50">
+            <!-- Messages will be injected here -->
+        </main>
+
+        <!-- Options / Input -->
+        <footer id="options-container" class="p-4 border-t border-gray-200 bg-white">
+            <!-- Options will be injected here -->
+        </footer>
+    </div>
+
+<script>
+const chatContainer = document.getElementById('chat-container');
+const optionsContainer = document.getElementById('options-container');
+
+const conversationFlow = {
+    start: {
+        message: "Olá! 👋 Sou o Assistente Virtual da *Soluções Impulso*. Estou aqui para te ajudar 24 horas por dia. Como posso começar?",
+        options: [
+            { text: "Ver Serviços", next: "showServices" },
+            { text: "Perguntas Frequentes", next: "showFaq" },
+            { text: "Fazer uma pergunta (I.A.)", next: "askOpenQuestion" },
+            { text: "Configurações ⚙️", next: "showSettings" },
+        ]
+    },
+    showServices: {
+        message: "Ótimo! Nós somos especialistas em alavancar negócios. Qual área você tem mais interesse?",
+        options: [
+            { text: "Marketing Digital", next: "leadCaptureMarketing" },
+            { text: "Criação de Sites", next: "leadCaptureSites" },
+            { text: "Consultoria de I.A.", next: "leadCaptureIA" }
+        ]
+    },
+    leadCaptureMarketing: {
+        message: "Excelente escolha! Marketing Digital é a nossa paixão. Para te enviar nosso portfólio e mais detalhes, por favor, qual o seu nome?",
+        input: 'text',
+        next: 'getEmail'
+    },
+    leadCaptureSites: {
+        message: "Perfeito! Um site profissional faz toda a diferença. Para te enviar alguns de nossos projetos, qual o seu nome?",
+        input: 'text',
+        next: 'getEmail'
+    },
+    leadCaptureIA: {
+        message: "Você está no lugar certo! A I.A. é o futuro. Para te enviar um material exclusivo, qual o seu nome?",
+        input: 'text',
+        next: 'getEmail'
+    },
+    getEmail: {
+        message: "Obrigado, {name}! E qual o seu melhor e-mail para contato?",
+        input: 'email',
+        next: 'finalMessage'
+    },
+    finalMessage: {
+        message: "Show! Anotado aqui. Um de nossos especialistas humanos entrará em contato com você pelo e-mail *{email}* muito em breve com todas as informações. Obrigado pelo seu tempo! 😊"
+    },
+    showFaq: {
+        message: "Claro! Selecione uma das perguntas mais comuns abaixo:",
+        options: [
+            { text: "Quais os preços?", next: "faqPrices" },
+            { text: "Qual o horário de atendimento?", next: "faqHours" },
+            { text: "Voltar", next: "start" }
+        ]
+    },
+    faqPrices: {
+        message: "Nossos projetos são 100% personalizados para a necessidade de cada cliente. Por isso, não trabalhamos com pacotes fixos. O ideal é conversar com um de nossos especialistas para entendermos seu desafio e montarmos um orçamento justo.",
+        options: [
+            { text: "Falar com Especialista", next: "talkToHuman" },
+            { text: "Ver outras perguntas", next: "showFaq" }
+        ]
+    },
+    faqHours: {
+        message: "Nossa equipe humana atende de segunda a sexta, das 9h às 18h. Mas a grande vantagem é que eu, seu assistente virtual, estou disponível 24/7 para te ajudar com o que precisar! 😉",
+        options: [
+            { text: "Falar com Especialista", next: "talkToHuman" },
+            { text: "Ver outras perguntas", next: "showFaq" }
+        ]
+    },
+    talkToHuman: {
+        message: "Sem problemas! Para eu notificar a pessoa certa, qual o seu nome?",
+        input: 'text',
+        next: 'humanHandoff'
+    },
+    humanHandoff: {
+        message: "Perfeito, {name}! Nossa equipe já foi notificada e um de nossos especialistas entrará em contato com você aqui mesmo pelo WhatsApp em poucos minutos. Por favor, aguarde."
+    },
+    askOpenQuestion: {
+        message: "Entendido! Graças à nossa integração com a I.A. DeepSeek, posso responder a perguntas mais complexas de forma aberta. Por favor, digite sua pergunta abaixo.",
+        input: 'text',
+        nextHandler: 'deepSeekHandler'
+    },
+    showSettings: {
+        message: "Aqui você pode configurar suas integrações. Por favor, insira sua Chave de API (API Key) do DeepSeek abaixo para ativar a inteligência artificial.",
+        input: 'password',
+        next: 'saveApiKey'
+    },
+    saveApiKey: {
+        message: "✅ Chave de API salva com sucesso! A I.A. conversacional agora está ativa e pronta para uso.",
+        options: [
+            { text: "Excelente!", next: "start" }
+        ]
+    },
+    iaAnswerMarketing: {
+        message: "Excelente pergunta! Para *Marketing Digital*, a I.A. pode otimizar campanhas em tempo real, identificar o público com maior potencial de compra e criar textos de anúncio que convertem mais. É como ter um estrategista de marketing trabalhando 24/7.",
+        options: [
+            { text: "Gostei, quero saber mais", next: "talkToHuman" },
+            { text: "Fazer outra pergunta", next: "askOpenQuestion" },
+            { text: "Voltar ao início", next: "start" }
+        ]
+    },
+    iaAnswerSites: {
+        message: "Sobre *Criação de Sites*, a I.A. ajuda a desenhar layouts focados na experiência do usuário (UX), personaliza o conteúdo para cada visitante e garante que o site seja otimizado para o Google (SEO) de forma muito mais eficiente.",
+        options: [
+            { text: "Interessante, quero um site", next: "talkToHuman" },
+            { text: "Fazer outra pergunta", next: "askOpenQuestion" },
+            { text: "Voltar ao início", next: "start" }
+        ]
+    },
+    iaAnswerSocialMedia: {
+        message: "Ótima pergunta sobre *redes sociais*! A I.A. pode analisar dados para descobrir os melhores horários para postar, identificar os conteúdos que mais engajam seu público e até mesmo ajudar a criar legendas criativas. É uma forma de tornar sua presença online muito mais estratégica.",
+        options: [
+             { text: "Gostei, quero saber mais", next: "talkToHuman" },
+            { text: "Fazer outra pergunta", next: "askOpenQuestion" },
+            { text: "Voltar ao início", next: "start" }
+        ]
+    },
+    iaAnswerSales: {
+        message: "Falar de *vendas* é fundamental. A I.A. é uma aliada poderosa para prever quais leads têm mais chance de fechar negócio, automatizar o envio de e-mails de acompanhamento e fornecer dados para sua equipe focar nos clientes certos, aumentando a taxa de conversão.",
+        options: [
+             { text: "Preciso disso, falar com especialista", next: "talkToHuman" },
+            { text: "Fazer outra pergunta", next: "askOpenQuestion" },
+            { text: "Voltar ao início", next: "start" }
+        ]
+    },
+    iaAnswerBranding: {
+        message: "Sobre a *criação de marca*, a I.A. pode analisar milhares de logos e tendências de mercado para sugerir paletas de cores, estilos de fonte e conceitos que se conectem com seu público-alvo. Ela acelera o processo criativo e o baseia em dados.",
+        options: [
+            { text: "Interessante, quero saber mais", next: "talkToHuman" },
+            { text: "Fazer outra pergunta", next: "askOpenQuestion" },
+            { text: "Voltar ao início", next: "start" }
+        ]
+    },
+    iaAnswerGeneric: {
+        message: "Essa é uma excelente e complexa questão. Minha arquitetura de I.A. foi otimizada para resolver desafios de negócios como automação de marketing, criação de sites e consultoria estratégica. Para um aprofundamento tão específico no tema que você mencionou, a melhor experiência virá de uma conversa com um de nossos especialistas humanos. Eles podem conectar esse ponto à sua realidade de negócio.",
+        options: [
+            { text: "Ok, quero falar com alguém", next: "talkToHuman" },
+            { text: "Tentar outra pergunta", next: "askOpenQuestion" },
+            { text: "Voltar ao início", next: "start" }
+        ]
+    }
+};
+
+let userState = {};
+
+function deepSeekHandler(question) {
+    const q = question.toLowerCase();
+    if (q.includes('marketing') || q.includes('anúncio')) {
+        return 'iaAnswerMarketing';
+    }
+    if (q.includes('site') || q.includes('loja virtual') || q.includes('e-commerce')) {
+        return 'iaAnswerSites';
+    }
+    if (q.includes('preço') || q.includes('custo') || q.includes('valor') || q.includes('quanto custa')) {
+        return 'faqPrices'; // Re-use existing flow
+    }
+    if (q.includes('social') || q.includes('instagram') || q.includes('facebook') || q.includes('redes sociais')) {
+        return 'iaAnswerSocialMedia';
+    }
+    if (q.includes('vendas') || q.includes('vender') || q.includes('cliente')) {
+        return 'iaAnswerSales';
+    }
+    if (q.includes('logo') || q.includes('marca') || q.includes('identidade visual')) {
+        return 'iaAnswerBranding';
+    }
+    return 'iaAnswerGeneric'; // Fallback to the improved generic answer
+}
+
+function scrollToBottom() {
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+}
+
+function displayTypingIndicator() {
+    const typingElement = document.createElement('div');
+    typingElement.id = 'typing-indicator';
+    typingElement.className = 'flex justify-start mb-4';
+    typingElement.innerHTML = `
+        <div class="bg-gray-200 text-gray-800 p-3 rounded-lg flex items-center">
+            <div class="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style="animation-delay: 0s;"></div>
+            <div class="w-2 h-2 bg-gray-500 rounded-full animate-bounce ml-1" style="animation-delay: 0.2s;"></div>
+            <div class="w-2 h-2 bg-gray-500 rounded-full animate-bounce ml-1" style="animation-delay: 0.4s;"></div>
+        </div>`;
+    chatContainer.appendChild(typingElement);
+    scrollToBottom();
+}
+
+function removeTypingIndicator() {
+    const typingElement = document.getElementById('typing-indicator');
+    if (typingElement) {
+        typingElement.remove();
+    }
+}
+
+function addBotMessage(text) {
+    const messageElement = document.createElement('div');
+    messageElement.className = 'flex justify-start mb-4';
+    text = text.replace(/\*(.*?)\*/g, '<strong class="font-semibold">$1</strong>');
+    messageElement.innerHTML = `<div class="bg-gray-200 text-gray-800 p-3 rounded-lg max-w-xs sm:max-w-sm">${text}</div>`;
+    
+    displayTypingIndicator();
+    
+    setTimeout(() => {
+        removeTypingIndicator();
+        chatContainer.appendChild(messageElement);
+        scrollToBottom();
+    }, 1000 + Math.random() * 500);
+}
+
+function addUserMessage(text) {
+    const messageElement = document.createElement('div');
+    messageElement.className = 'flex justify-end mb-4';
+    // If the input was a password, display it masked
+    const displayedText = optionsContainer.querySelector('input[type="password"]') ? '••••••••••••••••' : text;
+    messageElement.innerHTML = `<div class="bg-blue-600 text-white p-3 rounded-lg max-w-xs sm:max-w-sm">${displayedText}</div>`;
+    chatContainer.appendChild(messageElement);
+    scrollToBottom();
+}
+
+function showOptions(options) {
+    optionsContainer.innerHTML = '';
+    const optionsWrapper = document.createElement('div');
+    optionsWrapper.className = 'flex flex-wrap gap-2 justify-center';
+    
+    options.forEach(option => {
+        const button = document.createElement('button');
+        button.className = 'option-button bg-blue-100 text-blue-700 font-semibold py-2 px-4 rounded-full hover:bg-blue-200';
+        button.innerText = option.text;
+        button.onclick = () => handleUserInput(option.text, option.next, null);
+        optionsWrapper.appendChild(button);
+    });
+    optionsContainer.appendChild(optionsWrapper);
+}
+
+function showInput(type, nextStep, nextHandler) {
+    optionsContainer.innerHTML = '';
+    const inputWrapper = document.createElement('div');
+    inputWrapper.className = 'relative';
+    const input = document.createElement('input');
+    input.type = type;
+
+    let placeholderText = 'Digite sua mensagem...';
+    if (type === 'email') placeholderText = 'Digite seu e-mail...';
+    if (type === 'password') placeholderText = 'sk-••••••••••••••••••••';
+    input.placeholder = placeholderText;
+
+    input.className = 'w-full pl-4 pr-12 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50';
+    input.onkeypress = (e) => {
+        if (e.key === 'Enter' && input.value.trim() !== '') {
+            const valueKey = type === 'email' ? 'email' : 'name';
+            userState[valueKey] = input.value.trim();
+            handleUserInput(input.value.trim(), nextStep, nextHandler);
+        }
+    };
+
+    const sendButton = document.createElement('button');
+    sendButton.className = 'absolute right-2 top-1/2 -translate-y-1/2 bg-blue-600 hover:bg-blue-700 text-white p-2.5 rounded-full';
+    sendButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>`;
+    sendButton.onclick = () => {
+        if (input.value.trim() !== '') {
+             const valueKey = type === 'email' ? 'email' : 'name';
+            userState[valueKey] = input.value.trim();
+            handleUserInput(input.value.trim(), nextStep, nextHandler);
+        }
+    };
+    
+    inputWrapper.appendChild(input);
+    inputWrapper.appendChild(sendButton);
+    optionsContainer.appendChild(inputWrapper);
+    input.focus();
+}
+
+function handleUserInput(text, nextStep, nextHandler) {
+    addUserMessage(text);
+    
+    optionsContainer.innerHTML = '<p class="text-center text-sm text-gray-400">Assistente está digitando...</p>';
+
+    setTimeout(() => {
+        if (nextHandler && typeof window[nextHandler] === 'function') {
+            const nextStepId = window[nextHandler](text);
+            navigateTo(nextStepId);
+        } else {
+            navigateTo(nextStep);
+        }
+    }, 500);
+}
+
+function navigateTo(stepId) {
+    const step = conversationFlow[stepId];
+    if (!step) return;
+
+    let message = step.message;
+    if (userState.name) message = message.replace('{name}', userState.name);
+    if (userState.email) message = message.replace('{email}', userState.email);
+
+    setTimeout(() => {
+        addBotMessage(message);
+
+        setTimeout(() => {
+            if (step.options) {
+                showOptions(step.options);
+            } else if (step.input) {
+                showInput(step.input, step.next, step.nextHandler);
+            } else {
+                optionsContainer.innerHTML = ''; // End of flow
+            }
+        }, 1500);
+
+    }, 500);
+}
+
+// Start the conversation
+document.addEventListener('DOMContentLoaded', () => {
+    navigateTo('start');
+});
+</script>
+
+</body>
+</html>
