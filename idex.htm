@@ -56,6 +56,13 @@
 const chatContainer = document.getElementById('chat-container');
 const optionsContainer = document.getElementById('options-container');
 
+// -----------------------------------------------------------------------------
+// AVISO DE SEGURANÇA: NUNCA exponha sua chave de API em código front-end
+// em um projeto real. Use este método APENAS para demonstrações locais.
+// -----------------------------------------------------------------------------
+const DEEPSEEK_API_KEY = "SUA_CHAVE_API_VAI_AQUI"; 
+// -----------------------------------------------------------------------------
+
 const conversationFlow = {
     start: {
         message: "Olá! 👋 Sou o Assistente Virtual da *Soluções Impulso*. Estou aqui para te ajudar 24 horas por dia. Como posso começar?",
@@ -128,66 +135,21 @@ const conversationFlow = {
         message: "Perfeito, {name}! Nossa equipe já foi notificada e um de nossos especialistas entrará em contato com você aqui mesmo pelo WhatsApp em poucos minutos. Por favor, aguarde."
     },
     askOpenQuestion: {
-        message: "Entendido! Graças à nossa integração com a I.A. DeepSeek, posso responder a perguntas mais complexas de forma aberta. Por favor, digite sua pergunta abaixo.",
+        message: "Entendido! Graças à nossa integração com a I.A. DeepSeek, posso responder a perguntas mais complexas. Por favor, digite sua pergunta abaixo.",
         input: 'text',
         nextHandler: 'deepSeekHandler'
     },
     showSettings: {
-        message: "Aqui você pode configurar suas integrações. Por favor, insira sua Chave de API (API Key) do DeepSeek abaixo para ativar a inteligência artificial.",
-        input: 'password',
-        next: 'saveApiKey'
-    },
-    saveApiKey: {
-        message: "✅ Chave de API salva com sucesso! A I.A. conversacional agora está ativa e pronta para uso.",
+        message: "Aqui você pode configurar suas integrações. A chave de API do DeepSeek já foi inserida no código desta demonstração.",
         options: [
-            { text: "Excelente!", next: "start" }
+            { text: "Entendido", next: "start" }
         ]
     },
-    iaAnswerMarketing: {
-        message: "Excelente pergunta! Para *Marketing Digital*, a I.A. pode otimizar campanhas em tempo real, identificar o público com maior potencial de compra e criar textos de anúncio que convertem mais. É como ter um estrategista de marketing trabalhando 24/7.",
+    iaFollowUp: {
+        message: "Espero que isso tenha ajudado! Posso te ajudar com algo mais?",
         options: [
-            { text: "Gostei, quero saber mais", next: "talkToHuman" },
+            { text: "Falar com Especialista", next: "talkToHuman" },
             { text: "Fazer outra pergunta", next: "askOpenQuestion" },
-            { text: "Voltar ao início", next: "start" }
-        ]
-    },
-    iaAnswerSites: {
-        message: "Sobre *Criação de Sites*, a I.A. ajuda a desenhar layouts focados na experiência do usuário (UX), personaliza o conteúdo para cada visitante e garante que o site seja otimizado para o Google (SEO) de forma muito mais eficiente.",
-        options: [
-            { text: "Interessante, quero um site", next: "talkToHuman" },
-            { text: "Fazer outra pergunta", next: "askOpenQuestion" },
-            { text: "Voltar ao início", next: "start" }
-        ]
-    },
-    iaAnswerSocialMedia: {
-        message: "Ótima pergunta sobre *redes sociais*! A I.A. pode analisar dados para descobrir os melhores horários para postar, identificar os conteúdos que mais engajam seu público e até mesmo ajudar a criar legendas criativas. É uma forma de tornar sua presença online muito mais estratégica.",
-        options: [
-             { text: "Gostei, quero saber mais", next: "talkToHuman" },
-            { text: "Fazer outra pergunta", next: "askOpenQuestion" },
-            { text: "Voltar ao início", next: "start" }
-        ]
-    },
-    iaAnswerSales: {
-        message: "Falar de *vendas* é fundamental. A I.A. é uma aliada poderosa para prever quais leads têm mais chance de fechar negócio, automatizar o envio de e-mails de acompanhamento e fornecer dados para sua equipe focar nos clientes certos, aumentando a taxa de conversão.",
-        options: [
-             { text: "Preciso disso, falar com especialista", next: "talkToHuman" },
-            { text: "Fazer outra pergunta", next: "askOpenQuestion" },
-            { text: "Voltar ao início", next: "start" }
-        ]
-    },
-    iaAnswerBranding: {
-        message: "Sobre a *criação de marca*, a I.A. pode analisar milhares de logos e tendências de mercado para sugerir paletas de cores, estilos de fonte e conceitos que se conectem com seu público-alvo. Ela acelera o processo criativo e o baseia em dados.",
-        options: [
-            { text: "Interessante, quero saber mais", next: "talkToHuman" },
-            { text: "Fazer outra pergunta", next: "askOpenQuestion" },
-            { text: "Voltar ao início", next: "start" }
-        ]
-    },
-    iaAnswerGeneric: {
-        message: "Essa é uma excelente e complexa questão. Minha arquitetura de I.A. foi otimizada para resolver desafios de negócios como automação de marketing, criação de sites e consultoria estratégica. Para um aprofundamento tão específico no tema que você mencionou, a melhor experiência virá de uma conversa com um de nossos especialistas humanos. Eles podem conectar esse ponto à sua realidade de negócio.",
-        options: [
-            { text: "Ok, quero falar com alguém", next: "talkToHuman" },
-            { text: "Tentar outra pergunta", next: "askOpenQuestion" },
             { text: "Voltar ao início", next: "start" }
         ]
     }
@@ -195,28 +157,57 @@ const conversationFlow = {
 
 let userState = {};
 
-function deepSeekHandler(question) {
-    const q = question.toLowerCase();
-    if (q.includes('marketing') || q.includes('anúncio')) {
-        return 'iaAnswerMarketing';
+async function getDeepSeekResponse(question) {
+    if (!DEEPSEEK_API_KEY || DEEPSEEK_API_KEY === "sk-fd3a8ab0c15946bda90476d03eaeb905") {
+        return "Erro de configuração: A chave da API do DeepSeek não foi inserida no código. Por favor, adicione a chave para continuar.";
     }
-    if (q.includes('site') || q.includes('loja virtual') || q.includes('e-commerce')) {
-        return 'iaAnswerSites';
+
+    const apiUrl = 'https://api.deepseek.com';
+    const payload = {
+        model: "deepseek-chat",
+        messages: [
+            { role: "system", content: "Você é um assistente virtual da empresa 'Soluções Impulso', especialista em marketing digital e tecnologia. Suas respostas devem ser úteis, diretas e profissionais." },
+            { role: "user", content: question }
+        ]
+    };
+
+    try {
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            console.error("Erro na API:", response.status, await response.text());
+            return "Desculpe, estou com um problema técnico para me conectar à I.A. no momento. Por favor, tente novamente mais tarde.";
+        }
+
+        const data = await response.json();
+        return data.choices[0].message.content;
+    } catch (error) {
+        console.error("Erro na requisição:", error);
+        return "Desculpe, não foi possível conectar ao serviço de I.A. Verifique sua conexão com a internet.";
     }
-    if (q.includes('preço') || q.includes('custo') || q.includes('valor') || q.includes('quanto custa')) {
-        return 'faqPrices'; // Re-use existing flow
-    }
-    if (q.includes('social') || q.includes('instagram') || q.includes('facebook') || q.includes('redes sociais')) {
-        return 'iaAnswerSocialMedia';
-    }
-    if (q.includes('vendas') || q.includes('vender') || q.includes('cliente')) {
-        return 'iaAnswerSales';
-    }
-    if (q.includes('logo') || q.includes('marca') || q.includes('identidade visual')) {
-        return 'iaAnswerBranding';
-    }
-    return 'iaAnswerGeneric'; // Fallback to the improved generic answer
 }
+
+
+async function deepSeekHandler(question) {
+    displayTypingIndicator();
+    
+    const aiResponse = await getDeepSeekResponse(question);
+
+    removeTypingIndicator();
+    addBotMessage(aiResponse);
+
+    setTimeout(() => {
+        navigateTo('iaFollowUp');
+    }, 1000);
+}
+
 
 function scrollToBottom() {
     chatContainer.scrollTop = chatContainer.scrollHeight;
@@ -248,22 +239,14 @@ function addBotMessage(text) {
     messageElement.className = 'flex justify-start mb-4';
     text = text.replace(/\*(.*?)\*/g, '<strong class="font-semibold">$1</strong>');
     messageElement.innerHTML = `<div class="bg-gray-200 text-gray-800 p-3 rounded-lg max-w-xs sm:max-w-sm">${text}</div>`;
-    
-    displayTypingIndicator();
-    
-    setTimeout(() => {
-        removeTypingIndicator();
-        chatContainer.appendChild(messageElement);
-        scrollToBottom();
-    }, 1000 + Math.random() * 500);
+    chatContainer.appendChild(messageElement);
+    scrollToBottom();
 }
 
 function addUserMessage(text) {
     const messageElement = document.createElement('div');
     messageElement.className = 'flex justify-end mb-4';
-    // If the input was a password, display it masked
-    const displayedText = optionsContainer.querySelector('input[type="password"]') ? '••••••••••••••••' : text;
-    messageElement.innerHTML = `<div class="bg-blue-600 text-white p-3 rounded-lg max-w-xs sm:max-w-sm">${displayedText}</div>`;
+    messageElement.innerHTML = `<div class="bg-blue-600 text-white p-3 rounded-lg max-w-xs sm:max-w-sm">${text}</div>`;
     chatContainer.appendChild(messageElement);
     scrollToBottom();
 }
@@ -289,29 +272,20 @@ function showInput(type, nextStep, nextHandler) {
     inputWrapper.className = 'relative';
     const input = document.createElement('input');
     input.type = type;
-
-    let placeholderText = 'Digite sua mensagem...';
-    if (type === 'email') placeholderText = 'Digite seu e-mail...';
-    if (type === 'password') placeholderText = 'sk-••••••••••••••••••••';
-    input.placeholder = placeholderText;
-
+    input.placeholder = 'Digite sua mensagem...';
     input.className = 'w-full pl-4 pr-12 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50';
-    input.onkeypress = (e) => {
+    input.onkeypress = async (e) => {
         if (e.key === 'Enter' && input.value.trim() !== '') {
-            const valueKey = type === 'email' ? 'email' : 'name';
-            userState[valueKey] = input.value.trim();
-            handleUserInput(input.value.trim(), nextStep, nextHandler);
+            await handleUserInput(input.value.trim(), nextStep, nextHandler);
         }
     };
 
     const sendButton = document.createElement('button');
     sendButton.className = 'absolute right-2 top-1/2 -translate-y-1/2 bg-blue-600 hover:bg-blue-700 text-white p-2.5 rounded-full';
     sendButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>`;
-    sendButton.onclick = () => {
+    sendButton.onclick = async () => {
         if (input.value.trim() !== '') {
-             const valueKey = type === 'email' ? 'email' : 'name';
-            userState[valueKey] = input.value.trim();
-            handleUserInput(input.value.trim(), nextStep, nextHandler);
+            await handleUserInput(input.value.trim(), nextStep, nextHandler);
         }
     };
     
@@ -321,20 +295,18 @@ function showInput(type, nextStep, nextHandler) {
     input.focus();
 }
 
-function handleUserInput(text, nextStep, nextHandler) {
+async function handleUserInput(text, nextStep, nextHandler) {
     addUserMessage(text);
     
-    optionsContainer.innerHTML = '<p class="text-center text-sm text-gray-400">Assistente está digitando...</p>';
+    optionsContainer.innerHTML = '<p class="text-center text-sm text-gray-400">Assistente está processando...</p>';
 
-    setTimeout(() => {
-        if (nextHandler && typeof window[nextHandler] === 'function') {
-            const nextStepId = window[nextHandler](text);
-            navigateTo(nextStepId);
-        } else {
-            navigateTo(nextStep);
-        }
-    }, 500);
+    if (nextHandler && typeof window[nextHandler] === 'function') {
+        await window[nextHandler](text);
+    } else {
+        setTimeout(() => navigateTo(nextStep), 500);
+    }
 }
+
 
 function navigateTo(stepId) {
     const step = conversationFlow[stepId];
@@ -344,7 +316,10 @@ function navigateTo(stepId) {
     if (userState.name) message = message.replace('{name}', userState.name);
     if (userState.email) message = message.replace('{email}', userState.email);
 
+    displayTypingIndicator();
+    
     setTimeout(() => {
+        removeTypingIndicator();
         addBotMessage(message);
 
         setTimeout(() => {
@@ -355,7 +330,7 @@ function navigateTo(stepId) {
             } else {
                 optionsContainer.innerHTML = ''; // End of flow
             }
-        }, 1500);
+        }, 1000);
 
     }, 500);
 }
