@@ -60,7 +60,7 @@ const optionsContainer = document.getElementById('options-container');
 // AVISO DE SEGURANÇA: NUNCA exponha sua chave de API em código front-end
 // em um projeto real. Use este método APENAS para demonstrações locais.
 // -----------------------------------------------------------------------------
-const DEEPSEEK_API_KEY = "SUA_CHAVE_API_VAI_AQUI"; 
+const DEEPSEEK_API_KEY = "sk-b5bcad67311e4b7fb92714e81f453975"; 
 // -----------------------------------------------------------------------------
 
 const conversationFlow = {
@@ -162,7 +162,7 @@ async function getDeepSeekResponse(question) {
         return "Erro de configuração: A chave da API do DeepSeek não foi inserida no código. Por favor, adicione a chave para continuar.";
     }
 
-    const apiUrl = 'https://api.deepseek.com';
+    const apiUrl = 'https://api.deepseek.com/chat/completions';
     const payload = {
         model: "deepseek-chat",
         messages: [
@@ -343,3 +343,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </body>
 </html>
+
